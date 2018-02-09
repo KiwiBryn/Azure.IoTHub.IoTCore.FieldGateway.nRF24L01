@@ -1,0 +1,65 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2027
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.IoTHub.IoTCore.FieldGateway.NRF24L01", "Azure.IoTHub.IoTCore.FieldGateway.NRF24L01\Azure.IoTHub.IoTCore.FieldGateway.NRF24L01.csproj", "{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Radios.RF24", "Radios.RF24\Radios.RF24.csproj", "{906804EC-B76A-4BAE-B587-1B455071F7D9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|ARM = Debug|ARM
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|ARM = Release|ARM
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Debug|ARM.ActiveCfg = Debug|ARM
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Debug|ARM.Build.0 = Debug|ARM
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Debug|ARM.Deploy.0 = Debug|ARM
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Debug|x64.ActiveCfg = Debug|x64
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Debug|x64.Build.0 = Debug|x64
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Debug|x64.Deploy.0 = Debug|x64
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Debug|x86.ActiveCfg = Debug|x86
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Debug|x86.Build.0 = Debug|x86
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Debug|x86.Deploy.0 = Debug|x86
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Release|Any CPU.ActiveCfg = Release|x86
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Release|ARM.ActiveCfg = Release|ARM
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Release|ARM.Build.0 = Release|ARM
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Release|ARM.Deploy.0 = Release|ARM
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Release|x64.ActiveCfg = Release|x64
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Release|x64.Build.0 = Release|x64
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Release|x64.Deploy.0 = Release|x64
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Release|x86.ActiveCfg = Release|x86
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Release|x86.Build.0 = Release|x86
+		{22EABB7B-E7CD-4775-8C2F-E08F0E4B92C6}.Release|x86.Deploy.0 = Release|x86
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Debug|ARM.ActiveCfg = Debug|ARM
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Debug|ARM.Build.0 = Debug|ARM
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Debug|x64.ActiveCfg = Debug|x64
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Debug|x64.Build.0 = Debug|x64
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Debug|x86.ActiveCfg = Debug|x86
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Debug|x86.Build.0 = Debug|x86
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Release|ARM.ActiveCfg = Release|ARM
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Release|ARM.Build.0 = Release|ARM
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Release|x64.ActiveCfg = Release|x64
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Release|x64.Build.0 = Release|x64
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Release|x86.ActiveCfg = Release|x86
+		{906804EC-B76A-4BAE-B587-1B455071F7D9}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A450936E-5491-4876-9235-024040C6BA0B}
+	EndGlobalSection
+EndGlobal
