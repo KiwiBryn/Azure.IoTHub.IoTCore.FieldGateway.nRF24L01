@@ -146,7 +146,7 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
          // Check the payload is long enough to contain header length 
          if (messageData.Length < MessageHeaderLength)
          {
-            this.logging.LogMessage("Message to short for header", LoggingLevel.Warning);
+            this.logging.LogMessage("Message too short for header", LoggingLevel.Warning);
             return;
          }
 
@@ -262,14 +262,14 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
          {
             using (Message message = new Message(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(telemetryDataPoint))))
             {
-               Debug.WriteLine(" AzureIoTHub Send");
+               Debug.WriteLine(" AzureIoTHubClient SendEventAsync start");
                await this.azureIoTHubClient.SendEventAsync(message);
-               Debug.WriteLine(" AzureIoTHub Sent");
+               Debug.WriteLine(" AzureIoTHubClient SendEventAsync finish");
             }
          }
          catch (Exception ex)
          {
-            this.logging.LogMessage("SendEventAsync failed " + ex.Message, LoggingLevel.Error);
+            this.logging.LogMessage("AzureIoTHubClient SendEventAsync failed " + ex.Message, LoggingLevel.Error);
          }
       }
 
