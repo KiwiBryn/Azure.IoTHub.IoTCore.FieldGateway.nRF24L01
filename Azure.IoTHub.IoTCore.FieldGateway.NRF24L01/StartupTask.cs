@@ -143,7 +143,7 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
 
       private void Radio_OnDataReceived(byte[] messageData)
       {
-         // Check the payload is long enough to contain header length 
+         // Check the payload is long enough to contain header length
          if (messageData.Length < MessageHeaderLength)
          {
             this.logging.LogMessage("Message too short for header", LoggingLevel.Warning);
