@@ -113,23 +113,51 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
       {
          StorageFolder localFolder = ApplicationData.Current.LocalFolder;
 
-         // Check to see if file exists
-         if (localFolder.TryGetItemAsync(ConfigurationFilename).GetAwaiter().GetResult() == null)
-         {
-            this.logging.LogMessage("Configuration file " + ConfigurationFilename + " not found", LoggingLevel.Error);
-            return false;
-         }
-
          try
          {
-            // Load the configuration settings
-            StorageFile configurationFile = await localFolder.CreateFileAsync(ConfigurationFilename, CreationCollisionOption.OpenIfExists);
-            using (Stream stream = await configurationFile.OpenStreamForReadAsync())
+            // Check to see if file exists
+            if (localFolder.TryGetItemAsync(ConfigurationFilename).GetAwaiter().GetResult() == null)
             {
-               using (StreamReader streamReader = new StreamReader(stream))
+               this.logging.LogMessage("Configuration file " + ConfigurationFilename + " not found", LoggingLevel.Error);
+
+               this.applicationSettings = new ApplicationSettings()
                {
-                  this.applicationSettings = JsonConvert.DeserializeObject<ApplicationSettings>(streamReader.ReadToEnd());
+                  AzureIoTHubDeviceConnectionString = "Azure IoT Hub connection string goes here",
+                  AzureIoTHubTransportType = TransportType.Amqp,
+                  RF24Address = "Base1",
+                  RF24Channel = 10,
+                  RF24DataRate = DataRate.DR250Kbps,
+                  RF24PowerLevel = PowerLevel.High,
+                  IsRF24AutoAcknowledge = true,
+                  IsRF24DynamicAcknowledge = true,
+                  IsRF24DynamicPayload = true,
+               };
+
+               // Create empty configuration file
+               StorageFile configurationFile = await localFolder.CreateFileAsync(ConfigurationFilename, CreationCollisionOption.OpenIfExists);
+               using (Stream stream = await configurationFile.OpenStreamForWriteAsync())
+               {
+                  using (TextWriter streamWriter = new StreamWriter(stream))
+                  {
+                     streamWriter.Write( JsonConvert.SerializeObject(this.applicationSettings, Formatting.Indented));
+                  }
                }
+
+               return false;
+            }
+            else
+            {
+               // Load the configuration settings
+               StorageFile configurationFile = await localFolder.CreateFileAsync(ConfigurationFilename, CreationCollisionOption.OpenIfExists);
+               using (Stream stream = await configurationFile.OpenStreamForReadAsync())
+               {
+                  using (TextReader streamReader = new StreamReader(stream))
+                  {
+                     this.applicationSettings = JsonConvert.DeserializeObject<ApplicationSettings>(streamReader.ReadToEnd());
+                  }
+               }
+
+               return true;
             }
          }
          catch (Exception ex)
@@ -137,8 +165,6 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
             this.logging.LogMessage("Configuration file " + ConfigurationFilename + " load failed " + ex.Message, LoggingLevel.Error);
             return false;
          }
-
-         return true;
       }
 
       private void Radio_OnDataReceived(byte[] messageData)
