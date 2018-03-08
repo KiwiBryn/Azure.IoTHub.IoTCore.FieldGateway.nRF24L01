@@ -89,8 +89,8 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
          this.rf24.Channel = this.applicationSettings.RF24Channel;
 
          // The order of setting the power level and Data rate appears to be important, most probably register masking issue in NRF24 library which needs some investigation
-         this.rf24.DataRate = this.applicationSettings.RF24DataRate;
          this.rf24.PowerLevel = this.applicationSettings.RF24PowerLevel;
+         this.rf24.DataRate = this.applicationSettings.RF24DataRate;
          this.rf24.IsAutoAcknowledge = this.applicationSettings.IsRF24AutoAcknowledge;
          this.rf24.IsDyanmicAcknowledge = this.applicationSettings.IsRF24DynamicAcknowledge;
          this.rf24.IsDynamicPayload = this.applicationSettings.IsRF24DynamicPayload;
@@ -129,7 +129,7 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
                   RF24DataRate = DataRate.DR250Kbps,
                   RF24PowerLevel = PowerLevel.High,
                   IsRF24AutoAcknowledge = true,
-                  IsRF24DynamicAcknowledge = true,
+                  IsRF24DynamicAcknowledge = false,
                   IsRF24DynamicPayload = true,
                };
 
@@ -139,7 +139,7 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
                {
                   using (TextWriter streamWriter = new StreamWriter(stream))
                   {
-                     streamWriter.Write( JsonConvert.SerializeObject(this.applicationSettings, Formatting.Indented));
+                     streamWriter.Write(JsonConvert.SerializeObject(this.applicationSettings, Formatting.Indented));
                   }
                }
 
