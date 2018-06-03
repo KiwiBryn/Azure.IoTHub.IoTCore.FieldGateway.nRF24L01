@@ -67,6 +67,7 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
          LoggingFields azureIoTHubSettings = new LoggingFields();
          azureIoTHubSettings.AddString("DeviceConnectionString", this.applicationSettings.AzureIoTHubDeviceConnectionString);
          azureIoTHubSettings.AddString("TransportType", this.applicationSettings.AzureIoTHubTransportType.ToString());
+         azureIoTHubSettings.AddString("SensorIDIsDeviceIDSensorID", this.applicationSettings.SensorIDIsDeviceIDSensorID.ToString());
          this.logging.LogEvent("AzureIoTHub configuration", azureIoTHubSettings, LoggingLevel.Information);
 
          try
@@ -125,6 +126,7 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
                   AzureIoTHubDeviceConnectionString = "Azure IoT Hub connection string goes here",
                   AzureIoTHubTransportType = TransportType.Amqp,
                   RF24Address = "Base1",
+                  SensorIDIsDeviceIDSensorID = false,
                   RF24Channel = 10,
                   RF24DataRate = DataRate.DR250Kbps,
                   RF24PowerLevel = PowerLevel.High,
@@ -254,9 +256,9 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
          }
 
          JObject telemetryDataPoint = new JObject(); // This could be simplified but for field gateway will use this style
-
          LoggingFields sensorData = new LoggingFields();
 
+         telemetryDataPoint.Add("DeviceID", deviceId);
          sensorData.AddString("DeviceID", deviceId);
 
          // Chop up each sensor read into an ID & value
@@ -274,12 +276,19 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
             string sensorId = sensorIdAndValue[0];
             string value = sensorIdAndValue[1];
 
-            // Construct the sensor ID from SensordeviceID & Value ID
-            telemetryDataPoint.Add(string.Format("{0}{1}", deviceId, sensorId), value);
+            if (this.applicationSettings.SensorIDIsDeviceIDSensorID)
+            {
+               // Construct the sensor ID from SensordeviceID & Value ID
+               telemetryDataPoint.Add(string.Format("{0}{1}", deviceId, sensorId), value);
 
-            sensorData.AddString(sensorId, value);
-
-            Debug.WriteLine(" Sensor {0}{1} Value {2}", deviceId, sensorId, value);
+               sensorData.AddString(string.Format("{0}{1}", deviceId, sensorId), value);
+               Debug.WriteLine(" Sensor {0}{1} Value {2}", deviceId, sensorId, value);
+            }
+            else
+            {
+               telemetryDataPoint.Add(sensorId, value);
+               Debug.WriteLine(" Device {0} Sensor {1} Value {2}", deviceId, sensorId, value);
+            }
          }
 
          this.logging.LogEvent("Sensor readings", sensorData, LoggingLevel.Information);
@@ -307,6 +316,9 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
          [JsonProperty("AzureIoTHubTransportType", Required = Required.Always)]
          [JsonConverter(typeof(StringEnumConverter))]
          public TransportType AzureIoTHubTransportType { get; internal set; }
+
+         [JsonProperty("SensorIDIsDeviceIDSensorID", Required=Required.Always)]
+         public bool SensorIDIsDeviceIDSensorID { get; set; }
 
          [JsonProperty("RF24Address", Required = Required.Always)]
          public string RF24Address { get; set; }
