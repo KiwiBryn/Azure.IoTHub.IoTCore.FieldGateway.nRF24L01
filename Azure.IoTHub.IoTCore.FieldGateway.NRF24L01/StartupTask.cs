@@ -44,9 +44,9 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
       private const byte RF24ModuleChipSelectPin = 0;
       private const byte RF24ModuleInterruptPin = 17;
 
-      private LoggingChannel logging = new LoggingChannel("devMobile Azure IotHub nRF24L01 Field Gateway", null, new Guid("4bd2826e-54a1-4ba9-bf63-92b73ea1ac4a"));
+      private readonly LoggingChannel logging = new LoggingChannel("devMobile Azure IotHub nRF24L01 Field Gateway", null, new Guid("4bd2826e-54a1-4ba9-bf63-92b73ea1ac4a"));
+      private readonly RF24 rf24 = new RF24();
       private ApplicationSettings applicationSettings = null;
-      private RF24 rf24 = new RF24();
       private DeviceClient azureIoTHubClient = null;
       private BackgroundTaskDeferral deferral;
 
