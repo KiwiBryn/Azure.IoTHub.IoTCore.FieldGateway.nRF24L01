@@ -287,6 +287,8 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
             else
             {
                telemetryDataPoint.Add(sensorId, value);
+
+               sensorData.AddString(sensorId, value);
                Debug.WriteLine(" Device {0} Sensor {1} Value {2}", deviceId, sensorId, value);
             }
          }
