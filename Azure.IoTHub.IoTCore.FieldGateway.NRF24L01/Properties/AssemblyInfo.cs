@@ -23,10 +23,10 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("Azure.IoTHub Field gateway for nRF24L01 equipped devices")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("devMobile Software")]
-[assembly: AssemblyProduct("Azure.IoTHub.IoTCore.FieldGateway.NRF24L01")]
+[assembly: AssemblyProduct("devMobile Software Azure IoTHub LoRa FieldGateway")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("EN-NZ")]
+[assembly: AssemblyCulture("")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -38,6 +38,6 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.1.0")]
+[assembly: AssemblyFileVersion("1.0.1.0")]
 [assembly: ComVisible(false)]
