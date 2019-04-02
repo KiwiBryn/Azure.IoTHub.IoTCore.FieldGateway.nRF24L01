@@ -45,7 +45,10 @@ User Folders\LocalAppData\Azure.IoTHub.IoTCore.FieldGateway.NRF24L01-uwp_1.0.0.0
 I use the device portal "Apps\File Explorer"
 
 There are more detailed instructions and sample projects on Hackster.IO
-* [End to End projects](https://www.hackster.io/KiwiBryn)
+* Sample clients
+  * [Arduino](https://github.com/KiwiBryn/FieldGateway.nRF24L01.DuinoClient)
+  * [devDuino](https://github.com/KiwiBryn/FieldGateway.nRF24L01.devDuinoV2.2Client) 
+  * [Netduino](https://github.com/KiwiBryn/FieldGateway.nRF24L01.NetduinoClient)
 * [Azure IoT Hub project](https://www.hackster.io/KiwiBryn/azure-iot-hub-nrf24l01-windows-10-iot-core-field-gateway-b70917)
 
 
