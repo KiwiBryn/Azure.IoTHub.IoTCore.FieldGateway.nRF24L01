@@ -39,12 +39,26 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
       private const byte MessageHeaderPosition = 0;
       private const byte MessageHeaderLength = 1;
 
-      // nRF24 Hardware interface configuration
-      private const byte RF24ModuleChipEnablePin = 25;
+		// nRF24 Hardware interface configuration
+#if CEECH_NRF24L01P_SHIELD
+		private const byte RF24ModuleChipEnablePin = 25;
       private const byte RF24ModuleChipSelectPin = 0;
       private const byte RF24ModuleInterruptPin = 17;
+#endif
 
-      private readonly LoggingChannel logging = new LoggingChannel("devMobile Azure IotHub nRF24L01 Field Gateway", null, new Guid("4bd2826e-54a1-4ba9-bf63-92b73ea1ac4a"));
+#if BOROS_RF2_SHIELD_RADIO_0
+		private const byte RF24ModuleChipEnablePin = 24;
+      private const byte RF24ModuleChipSelectPin = 0;
+      private const byte RF24ModuleInterruptPin = 27;
+#endif
+
+#if BOROS_RF2_SHIELD_RADIO_1
+		private const byte RF24ModuleChipEnablePin = 25;
+      private const byte RF24ModuleChipSelectPin = 1;
+      private const byte RF24ModuleInterruptPin = 22;
+#endif
+
+		private readonly LoggingChannel logging = new LoggingChannel("devMobile Azure IotHub nRF24L01 Field Gateway", null, new Guid("4bd2826e-54a1-4ba9-bf63-92b73ea1ac4a"));
       private readonly RF24 rf24 = new RF24();
       private ApplicationSettings applicationSettings = null;
       private DeviceClient azureIoTHubClient = null;
