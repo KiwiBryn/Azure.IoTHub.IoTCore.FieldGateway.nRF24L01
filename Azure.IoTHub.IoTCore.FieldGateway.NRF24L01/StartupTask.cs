@@ -19,25 +19,36 @@
 namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
 {
    using System;
-   using System.Diagnostics;
-   using System.IO;
-   using System.Text;
+#if CLOUD2DEVICE_SEND
+	using System.Collections.Concurrent;
+#endif
+	using System.Diagnostics;
+	using System.Globalization;
+	using System.IO;
+	using System.Linq;
+	using System.Text;
    using System.Threading.Tasks;
    using Microsoft.Azure.Devices.Client;
    using Newtonsoft.Json;
    using Newtonsoft.Json.Converters;
    using Newtonsoft.Json.Linq;
    using Radios.RF24;
-   using Windows.ApplicationModel.Background;
+	using Windows.ApplicationModel;
+	using Windows.ApplicationModel.Background;
    using Windows.Foundation.Diagnostics;
    using Windows.Storage;
+	using Windows.System;
 
-   public sealed class StartupTask : IBackgroundTask
+	public sealed class StartupTask : IBackgroundTask
    {
       private const string ConfigurationFilename = "config.json";
 
       private const byte MessageHeaderPosition = 0;
       private const byte MessageHeaderLength = 1;
+		private const byte MessageAddressLengthMinimum = 3;
+		private const byte MessageAddressLengthMaximum = 5;
+		private const byte MessagePayloadLengthMinimum = 0;
+		private const byte MessagePayloadLengthMaximum = 24;
 
 		// nRF24 Hardware interface configuration
 #if CEECH_NRF24L01P_SHIELD
@@ -60,14 +71,19 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
 
 		private readonly LoggingChannel logging = new LoggingChannel("devMobile Azure IotHub nRF24L01 Field Gateway", null, new Guid("4bd2826e-54a1-4ba9-bf63-92b73ea1ac4a"));
       private readonly RF24 rf24 = new RF24();
-      private ApplicationSettings applicationSettings = null;
+		private readonly TimeSpan deviceRebootDelayPeriod = new TimeSpan(0, 0, 25);
+		private ApplicationSettings applicationSettings = null;
       private DeviceClient azureIoTHubClient = null;
-      private BackgroundTaskDeferral deferral;
+#if CLOUD2DEVICE_SEND
+		private ConcurrentDictionary<byte[], byte[]> sendMessageQueue = new ConcurrentDictionary<byte[], byte[]>();
+#endif
+		private BackgroundTaskDeferral deferral;
 
       private enum MessagePayloadType : byte
       {
          Echo = 0,
          DeviceIdPlusCsvSensorReadings,
+			DeviceIdPlusBinaryPayload,
       }
 
       public void Run(IBackgroundTaskInstance taskInstance)
@@ -77,8 +93,46 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
             return;
          }
 
-         // Connect the IoT hub first so we are ready for any messages
-         LoggingFields azureIoTHubSettings = new LoggingFields();
+			// Log the Application build, shield information etc.
+			LoggingFields applicationBuildInformation = new LoggingFields();
+#if CEECH_NRF24L01P_SHIELD
+			applicationBuildInformation.AddString("Shield", "CeechnRF24L01P");
+#endif
+#if BOROS_RF2_SHIELD_RADIO_0
+			appllcationBuildInformation.AddString("Shield", "BorosRF2Port0");
+#endif
+#if BOROS_RF2_SHIELD_RADIO_1
+			applicationBuildInformation.AddString("Shield", "BorosRF2Port1");
+#endif
+#if CLOUD_DEVICE_BOND
+			applicationBuildInformation.AddString("Bond", "Supported");
+#else
+			applicationBuildInformation.AddString("Bond", "NotSupported");
+#endif
+#if CLOUD_DEVICE_PUSH
+			applicationBuildInformation.AddString("Push", "Supported");
+#else
+			applicationBuildInformation.AddString("Push", "NotSupported");
+#endif
+#if CLOUD_DEVICE_SEND
+			applicationBuildInformation.AddString("Send", "Supported");
+#else
+			applicationBuildInformation.AddString("Send", "NotSupported");
+#endif
+			applicationBuildInformation.AddString("Timezone", TimeZoneSettings.CurrentTimeZoneDisplayName);
+			applicationBuildInformation.AddString("OSVersion", Environment.OSVersion.VersionString);
+			applicationBuildInformation.AddString("MachineName", Environment.MachineName);
+
+			// This is from the application manifest
+			Package package = Package.Current;
+			PackageId packageId = package.Id;
+			PackageVersion version = packageId.Version;
+
+			applicationBuildInformation.AddString("ApplicationVersion", string.Format($"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}"));
+			this.logging.LogEvent("Application starting", applicationBuildInformation, LoggingLevel.Information);
+
+			// Connect the IoT hub first so we are ready for any messages
+			LoggingFields azureIoTHubSettings = new LoggingFields();
          azureIoTHubSettings.AddString("DeviceConnectionString", this.applicationSettings.AzureIoTHubDeviceConnectionString);
          azureIoTHubSettings.AddString("TransportType", this.applicationSettings.AzureIoTHubTransportType.ToString());
          azureIoTHubSettings.AddString("SensorIDIsDeviceIDSensorID", this.applicationSettings.SensorIDIsDeviceIDSensorID.ToString());
@@ -94,8 +148,58 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
             return;
          }
 
-         // Configure the nRF24L01 module
-         this.rf24.OnDataReceived += this.Radio_OnDataReceived;
+			// Wire up the field gateway restart method handler
+			try
+			{
+				this.azureIoTHubClient.SetMethodHandlerAsync("Restart", this.RestartAsync, null);
+			}
+			catch (Exception ex)
+			{
+				this.logging.LogMessage("Azure IoT Hub client Restart method handler setup failed " + ex.Message, LoggingLevel.Error);
+				return;
+			}
+
+#if CLOUD_DEVICE_BOND
+			// Wire up the bond device method handler
+			try
+			{
+				this.azureIoTHubClient.SetMethodHandlerAsync("DeviceBond", this.DeviceBondAsync, null);
+			}
+			catch (Exception ex)
+			{
+				this.logging.LogMessage("Azure IoT Hub Device Bond method handler setup failed " + ex.Message, LoggingLevel.Error);
+				return;
+			}
+#endif
+
+#if CLOUD_DEVICE_PUSH
+			// Wire up the push message to device method handler
+			try
+			{
+				this.azureIoTHubClient.SetMethodHandlerAsync("DevicePush", this.DevicePushAsync, null);
+			}
+			catch (Exception ex)
+			{
+				this.logging.LogMessage("Azure IoT Hub client DevicePush SetMethodHandlerAsync failed " + ex.Message, LoggingLevel.Error);
+				return;
+			}
+#endif
+
+#if CLOUD_DEVICE_SEND
+			// Wire up the send message to device method handler
+			try
+			{
+				this.azureIoTHubClient.SetMethodHandlerAsync("DeviceSend", this.DeviceSendAsync, null);
+			}
+			catch (Exception ex)
+			{
+				this.logging.LogMessage("Azure IoT Hub client DeviceSend SetMethodHandlerAsync failed " + ex.Message, LoggingLevel.Error);
+				return;
+			}
+#endif
+
+			// Configure the nRF24L01 module
+			this.rf24.OnDataReceived += this.Radio_OnDataReceived;
          this.rf24.OnTransmitFailed += this.Radio_OnTransmitFailed;
          this.rf24.OnTransmitSuccess += this.Radio_OnTransmitSuccess;
 
@@ -200,8 +304,8 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
                break;
             case MessagePayloadType.DeviceIdPlusCsvSensorReadings:
                this.MessageDataSensorDeviceIdPlusCsvData(messageData);
-               break;
-            default:
+					break;
+				default:
                this.MessageDataDisplay(messageData);
                break;
          }
@@ -332,7 +436,190 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
          }
       }
 
-      private class ApplicationSettings
+		private async Task<MethodResponse> RestartAsync(MethodRequest methodRequest, object userContext)
+		{
+			this.logging.LogEvent("Reboot initiated");
+
+			ShutdownManager.BeginShutdown(ShutdownKind.Restart, this.deviceRebootDelayPeriod);
+
+			return new MethodResponse(200);
+		}
+
+#if CLOUD_DEVICE_BOND
+		private async Task<MethodResponse> DeviceBondAsync(MethodRequest methodRequest, object userContext)
+		{
+			LoggingFields bondLoggingInfo = new LoggingFields();
+
+			try
+			{
+				dynamic json = JValue.Parse(methodRequest.DataAsJson);
+
+				string deviceAddressBcd = json.DeviceAddress;
+				bondLoggingInfo.AddString("DeviceAddressBCD", deviceAddressBcd);
+				Debug.WriteLine($"DeviceBondAsync DeviceAddressBCD {deviceAddressBcd}");
+
+				byte[] deviceAddressBytes = deviceAddressBcd.Split('-').Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray();
+				bondLoggingInfo.AddInt32("DeviceAddressBytes Length", deviceAddressBytes.Length);
+				Debug.WriteLine($"DeviceBondAsync DeviceAddressLength {deviceAddressBytes.Length}");
+
+				if ((deviceAddressBytes.Length < .AddressLengthMinimum) || (deviceAddressBytes.Length > .AddressLengthMaximum))
+				{
+					this.logging.LogEvent("DeviceBondAsync failed device address bytes length", bondLoggingInfo, LoggingLevel.Error);
+					return new MethodResponse(414);
+				}
+
+				// Empty payload for bond message
+				byte[] payloadBytes = { };
+
+				rf24.Send(deviceAddressBytes, payloadBytes);
+
+				this.logging.LogEvent("DeviceBondAsync success", bondLoggingInfo, LoggingLevel.Information);
+			}
+			catch (Exception ex)
+			{
+				bondLoggingInfo.AddString("Exception", ex.ToString());
+				this.logging.LogEvent("DeviceBondAsync exception", bondLoggingInfo, LoggingLevel.Error);
+				return new MethodResponse(400);
+			}
+
+			return new MethodResponse(200);
+		}
+#endif
+
+#if CLOUD2DEVICE_SEND
+		private async Task<MethodResponse> DeviceSendAsync(MethodRequest methodRequest, object userContext)
+		{
+			LoggingFields sendLoggingInfo = new LoggingFields();
+
+			this.logging.LogEvent("Send BCD initiated");
+
+			try
+			{
+				// Initially use a dynamic maybe use a decorated class in future
+				dynamic json = JValue.Parse(methodRequest.DataAsJson);
+
+				string deviceAddressBcd = json.DeviceAddress;
+				sendLoggingInfo.AddString("DeviceAddressBCD", deviceAddressBcd);
+				Debug.WriteLine($"DeviceSendAsync DeviceAddressBCD {deviceAddressBcd}");
+
+				byte[] deviceAddressBytes = deviceAddressBcd.Split('-').Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray();
+				sendLoggingInfo.AddInt32("DeviceAddressBytes Length", deviceAddressBytes.Length);
+				Debug.WriteLine($"DeviceSendAsync DeviceAddressLength {deviceAddressBytes.Length}");
+
+				if ((deviceAddressBytes.Length < .AddressLengthMinimum) || (deviceAddressBytes.Length > .AddressLengthMaximum))
+				{
+					this.logging.LogEvent("DeviceSendAsync failed device address bytes length", sendLoggingInfo, LoggingLevel.Error);
+					return new MethodResponse(414);
+				}
+
+				string messagedBcd = json.DevicePayload;
+				sendLoggingInfo.AddString("MessageBCD", messagedBcd);
+
+				byte[] messageBytes = messagedBcd.Split('-').Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray(); // changed the '-' to ' '
+				sendLoggingInfo.AddInt32("MessageBytesLength", messageBytes.Length);
+				Debug.WriteLine($"DeviceSendAsync DeviceAddress:{deviceAddressBcd} Payload:{messagedBcd}");
+
+				if ((messageBytes.Length < .MessageLengthMinimum) || (messageBytes.Length > .MessageLengthMaximum))
+				{
+					this.logging.LogEvent("DeviceSendAsync failed payload Length", sendLoggingInfo, LoggingLevel.Error);
+					return new MethodResponse(413);
+				}
+
+				if (sendMessageQueue.TryAdd(deviceAddressBytes, messageBytes))
+				{
+					this.logging.LogEvent("DeviceSendAsync failed message already queued", sendLoggingInfo, LoggingLevel.Error);
+					return new MethodResponse(409);
+				}
+
+				this.logging.LogEvent("DeviceSendAsync success", sendLoggingInfo, LoggingLevel.Information);
+			}
+			catch (Exception ex)
+			{
+				sendLoggingInfo.AddString("Exception", ex.ToString());
+				this.logging.LogEvent("DeviceSendAsync failed exception", sendLoggingInfo, LoggingLevel.Error);
+				return new MethodResponse(400);
+			}
+
+			return new MethodResponse(200);
+		}
+#endif
+
+#if CLOUD2DEVICE_PUSH
+		private async Task<MethodResponse> DevicePushAsync(MethodRequest methodRequest, object userContext)
+		{
+			LoggingFields pushLoggingInfo = new LoggingFields();
+
+			this.logging.LogEvent("Push BCD initiated");
+
+			try
+			{
+				// Initially use a dynamac maybe use a decorated class in future +flexibility -performance
+				dynamic json = JValue.Parse(methodRequest.DataAsJson);
+
+				// Prepare the server address bytes for the message header and validate length
+				byte[] serverAddressBytes = Encoding.UTF8.GetBytes(this.applicationSettings.RF24Address);
+				pushLoggingInfo.AddInt32("serverAddressBytes Length", serverAddressBytes.Length);
+
+				if (serverAddressBytes.Length > MessageAddressLengthMaximum)
+				{
+					this.logging.LogEvent("DevicePushBcdAsync failed server address bytes Length", pushLoggingInfo, LoggingLevel.Error);
+					return new MethodResponse(400);
+				}
+
+				// Convert the device address from the JSON payload to bytes and validate length
+				string deviceAddressBcd = json.DeviceAddress;
+				pushLoggingInfo.AddString("DeviceAddressBCD", deviceAddressBcd);
+
+				byte[] deviceAddressBytes = deviceAddressBcd.Split('-').Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray();
+				pushLoggingInfo.AddInt32("DeviceAddressBytes Length", deviceAddressBytes.Length);
+
+				if ((deviceAddressBytes.Length < ) || (deviceAddressBytes.Length > ))
+				{
+					this.logging.LogEvent("DevicePushAsync failed device address bytes length", pushLoggingInfo, LoggingLevel.Error);
+					return new MethodResponse(414);
+				}
+
+				string messagedBcd = json.DevicePayload;
+				pushLoggingInfo.AddString("MessageBCD", messagedBcd);
+
+				byte[] messageBytes = messagedBcd.Split('-').Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray();
+				pushLoggingInfo.AddInt32("MessageBytesLength", messageBytes.Length);
+
+				Debug.WriteLine($"BondDeviceAsync DeviceAddress:{deviceAddressBcd} Payload:{messagedBcd} ServerAddress:{serverAddressBytes}");
+
+				int payloadLength = MessageHeaderLength + deviceAddressBytes.Length + messageBytes.Length;
+				pushLoggingInfo.AddInt32("PayloadLength", payloadLength);
+
+				if (payloadLength < MessagePayloadLengthMinimum || (payloadLength > MessagePayloadLengthMaximum))
+				{
+					this.logging.LogEvent("DevicePushBcdAsync failed payload Length", pushLoggingInfo, LoggingLevel.Error);
+					return new MethodResponse(400);
+				}
+
+				// Assemble payload to send to device
+				byte[] payloadBytes = new byte[payloadLength];
+
+				payloadBytes[0] = (byte)(((byte)MessagePayloadType.DeviceIdPlusBinaryPayload << 4) | deviceAddressBytes.Length);
+				Array.Copy(serverAddressBytes, 0, payloadBytes, MessageHeaderLength, serverAddressBytes.Length);
+				Array.Copy(messageBytes, 0, payloadBytes, MessageHeaderLength + serverAddressBytes.Length, messageBytes.Length);
+
+				this.rf24.SendTo(deviceAddressBytes, payloadBytes);
+
+				this.logging.LogEvent("Device Push BCD data", pushLoggingInfo, LoggingLevel.Information);
+			}
+			catch (Exception ex)
+			{
+				pushLoggingInfo.AddString("Exception", ex.ToString());
+				this.logging.LogEvent("DevicePushAsync failed exception", pushLoggingInfo, LoggingLevel.Error);
+
+				return new MethodResponse(400);
+			}
+
+			return new MethodResponse(200);
+		}
+#endif
+
+		private class ApplicationSettings
       {
          [JsonProperty("AzureIoTHubDeviceConnectionString", Required = Required.Always)]
          public string AzureIoTHubDeviceConnectionString { get; set; }
@@ -344,7 +631,7 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
          [JsonProperty("SensorIDIsDeviceIDSensorID", Required=Required.Always)]
          public bool SensorIDIsDeviceIDSensorID { get; set; }
 
-         [JsonProperty("RF24Address", Required = Required.Always)]
+			[JsonProperty("RF24Address", Required = Required.Always)]
          public string RF24Address { get; set; }
 
          [JsonProperty("RF24Channel", Required = Required.Always)]
