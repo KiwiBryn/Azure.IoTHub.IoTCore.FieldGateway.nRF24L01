@@ -2,11 +2,20 @@
 
 A Windows 10 Iot Core based field gateway for uploading telemetry data from [nRF24L01](http://www.nordicsemi.com/eng/Products/2.4GHz-RF/nRF24L01) enabled devices to [Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) or [Microsoft IoT Central](https://www.microsoft.com/en-us/iot-central/)
 
-I use an RPI nRF24L01 shield from [Ceech@Tindie](https://www.tindie.com/products/ceech/new-raspberry-pi-to-nrf24l01-shield)
+I use an RPI nRF24L01 shield from [Ceech@Tindie](https://www.tindie.com/products/ceech/new-raspberry-pi-to-nrf24l01-shield) or Dual NRF24L01 pHat/Hat from [BorosLabs@Tindie](https://www.tindie.com/products/boros/borosrf2-dual-nrf24l01-phathat-rtc-for-pis/)
 
-![RPI with nRF24L01 Hat](RPiWithnRF24Hat.jpg)
+![RPI with Ceech nRF24L01 Hat](RPiWithnRF24Hat.jpg)
 
-For use with Windows 10 IoT Core it needs a simple modification detailed in my [blog](https://blog.devmobile.co.nz/2017/07/31/nrf24-windows-10-iot-core-hardware/)
+For use with Windows 10 IoT Core the Ceech Hat needs a simple modification detailed in my [blog](https://blog.devmobile.co.nz/2017/07/31/nrf24-windows-10-iot-core-hardware/)
+
+![RPI with Boros Dual nRF24L01 Hat](BorosRF24Shield.jpg)
+
+The PI Hat is specified using a confitional compilation symbol defined in the project build properties. The supported options are
+* CEECH_NRF24L01P_SHIELD
+* BOROS_RF2_SHIELD_RADIO_0 
+* BOROS_RF2_SHIELD_RADIO_1
+
+The Boros RF2 shield has two nRF24L01 sockets, in a future release I will add support for both of them being active concurrently.
 
 The Windows 10 IoT Core device logs useful information via Realtime ETW Tracing which can be viewed in the Device Portal Debug\ETW after 
 enabling the "Microsoft-Windows-Diagnostics-LoggingChannel" provider.
@@ -34,4 +43,13 @@ The AzureIoTHubDeviceConnectionString needs to be updated then the file uploaded
 User Folders\LocalAppData\Azure.IoTHub.IoTCore.FieldGateway.NRF24L01-uwp_1.0.0.0_arm__nmn3tag1rpsaw\LocalState\
 
 I use the device portal "Apps\File Explorer"
+
+There are more detailed instructions and sample projects on Hackster.IO
+* Sample clients
+  * [Arduino](https://github.com/KiwiBryn/FieldGateway.nRF24L01.DuinoClient)
+  * [devDuino](https://github.com/KiwiBryn/FieldGateway.nRF24L01.devDuinoV2.2Client) 
+  * [Netduino](https://github.com/KiwiBryn/FieldGateway.nRF24L01.NetduinoClient)
+* [Azure IoT Hub project](https://www.hackster.io/KiwiBryn/azure-iot-hub-nrf24l01-windows-10-iot-core-field-gateway-b70917)
+
+
 
