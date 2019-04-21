@@ -104,6 +104,9 @@
       <SubType>Designer</SubType>
     </AppxManifest>
     <None Include="Azure.IoTHub.IoTCore.FieldGateway.NRF24L01_TemporaryKey.pfx" />
+    <Content Include="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Properties\Default.rd.xml" />

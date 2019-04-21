@@ -19,11 +19,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Azure.IoTHub.IoTCore.FieldGateway.NRF24L01")]
+[assembly: AssemblyTitle("Azure.IoTHub.IoTCore.FieldGateway.nRF24L01")]
 [assembly: AssemblyDescription("Azure.IoTHub Field gateway for nRF24L01 equipped devices")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("devMobile Software")]
-[assembly: AssemblyProduct("devMobile Software Azure IoTHub LoRa FieldGateway")]
+[assembly: AssemblyProduct("devMobile Software Azure IoTHub nRF24L01 Field Gateway")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -38,6 +38,6 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.2.0")]
-[assembly: AssemblyFileVersion("1.0.2.0")]
+[assembly: AssemblyVersion("1.0.3.0")]
+[assembly: AssemblyFileVersion("1.0.3.0")]
 [assembly: ComVisible(false)]

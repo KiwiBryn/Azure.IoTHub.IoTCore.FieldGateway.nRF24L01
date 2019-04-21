@@ -1,0 +1,12 @@
+﻿{
+  "AzureIoTHubDeviceConnectionString": "Put you AzureIOT Hub/Central connection string here",
+  "AzureIoTHubTransportType": "Amqp",
+  "SensorIDIsDeviceIDSensorID": "True",
+  "RF24Address": "Base station address here max 5 chars",
+  "RF24Channel": 15,
+  "RF24DataRate": "DR250Kbps",
+  "RF24PowerLevel": "High",
+  "RF24AutoAcknowledge": true,
+  "RF24DynamicAcknowledge": false,
+  "RF24DynamicPayload": true
+}

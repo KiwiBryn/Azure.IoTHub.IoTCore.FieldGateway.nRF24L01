@@ -23,9 +23,10 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
 	using System.Collections.Concurrent;
 #endif
 	using System.Diagnostics;
-	using System.Globalization;
-	using System.IO;
+#if CLOUD_DEVICE_BOND || CLOUD2DEVICE_PUSH || CLOUD2DEVICE_SEND
+ 	using System.Globalization;
 	using System.Linq;
+#endif
 	using System.Text;
    using System.Threading.Tasks;
    using Microsoft.Azure.Devices.Client;
@@ -88,10 +89,27 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
 
       public void Run(IBackgroundTaskInstance taskInstance)
       {
-         if (!this.ConfigurationFileLoad().Result)
-         {
-            return;
-         }
+			StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+
+			try
+			{
+				// see if the configuration file is present if not copy minimal sample one from application directory
+				if (localFolder.TryGetItemAsync(ConfigurationFilename).AsTask().Result == null)
+				{
+					StorageFile templateConfigurationfile = Package.Current.InstalledLocation.GetFileAsync(ConfigurationFilename).AsTask().Result;
+					templateConfigurationfile.CopyAsync(localFolder, ConfigurationFilename).AsTask();
+				}
+
+				// Load the settings from configuration file exit application if missing or invalid
+				StorageFile file = localFolder.GetFileAsync(ConfigurationFilename).AsTask().Result;
+
+				this.applicationSettings = JsonConvert.DeserializeObject<ApplicationSettings>(FileIO.ReadTextAsync(file).AsTask().Result);
+			}
+			catch (Exception ex)
+			{
+				this.logging.LogMessage("JSON configuration file load failed " + ex.Message, LoggingLevel.Error);
+				return;
+			}
 
 			// Log the Application build, shield information etc.
 			LoggingFields applicationBuildInformation = new LoggingFields();
@@ -228,66 +246,7 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
          this.deferral = taskInstance.GetDeferral();
       }
 
-      private async Task<bool> ConfigurationFileLoad()
-      {
-         StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-
-         try
-         {
-            // Check to see if file exists
-            if (localFolder.TryGetItemAsync(ConfigurationFilename).GetAwaiter().GetResult() == null)
-            {
-               this.logging.LogMessage("Configuration file " + ConfigurationFilename + " not found", LoggingLevel.Error);
-
-               this.applicationSettings = new ApplicationSettings()
-               {
-                  AzureIoTHubDeviceConnectionString = "Azure IoT Hub connection string goes here",
-                  AzureIoTHubTransportType = TransportType.Amqp,
-                  RF24Address = "Base1",
-                  SensorIDIsDeviceIDSensorID = false,
-                  RF24Channel = 10,
-                  RF24DataRate = DataRate.DR250Kbps,
-                  RF24PowerLevel = PowerLevel.High,
-                  IsRF24AutoAcknowledge = true,
-                  IsRF24DynamicAcknowledge = false,
-                  IsRF24DynamicPayload = true,
-               };
-
-               // Create empty configuration file
-               StorageFile configurationFile = await localFolder.CreateFileAsync(ConfigurationFilename, CreationCollisionOption.OpenIfExists);
-               using (Stream stream = await configurationFile.OpenStreamForWriteAsync())
-               {
-                  using (TextWriter streamWriter = new StreamWriter(stream))
-                  {
-                     streamWriter.Write(JsonConvert.SerializeObject(this.applicationSettings, Formatting.Indented));
-                  }
-               }
-
-               return false;
-            }
-            else
-            {
-               // Load the configuration settings
-               StorageFile configurationFile = await localFolder.CreateFileAsync(ConfigurationFilename, CreationCollisionOption.OpenIfExists);
-               using (Stream stream = await configurationFile.OpenStreamForReadAsync())
-               {
-                  using (TextReader streamReader = new StreamReader(stream))
-                  {
-                     this.applicationSettings = JsonConvert.DeserializeObject<ApplicationSettings>(streamReader.ReadToEnd());
-                  }
-               }
-
-               return true;
-            }
-         }
-         catch (Exception ex)
-         {
-            this.logging.LogMessage("Configuration file " + ConfigurationFilename + " load failed " + ex.Message, LoggingLevel.Error);
-            return false;
-         }
-      }
-
-      private void Radio_OnDataReceived(byte[] messageData)
+		private void Radio_OnDataReceived(byte[] messageData)
       {
          // Check the payload is long enough to contain header length
          if (messageData.Length < MessageHeaderLength)
