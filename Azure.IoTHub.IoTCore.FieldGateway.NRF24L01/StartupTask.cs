@@ -111,6 +111,14 @@ namespace devMobile.Azure.IoTHub.IoTCore.FieldGateway.NRF24L01
 				return;
 			}
 
+#if CEECH_NRF24L01P_SHIELD
+			// Disable the onboard beeper so it doesn't whine so much
+         GpioController gpioController = GpioController.GetDefault();
+			GpioPin buzzer = gpioController.OpenPin(4);
+			buzzer.SetDriveMode(GpioPinDriveMode.Output);
+			buzzer.Write(GpioPinValue.Low);
+#endif
+
 			// Log the Application build, shield information etc.
 			LoggingFields applicationBuildInformation = new LoggingFields();
 #if CEECH_NRF24L01P_SHIELD
